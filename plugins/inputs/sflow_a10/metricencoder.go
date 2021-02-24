@@ -24,12 +24,16 @@ func makeMetricsForCounters(p *V5Format, d *PacketDecoder) ([]telegraf.Metric, e
 		}
 
 		key := createMapKey(sample.SampleCounterData.SourceID, p.AgentAddress.String())
-		if _, exists := d.DimensionsPerSourceIDMap[key]; !exists {
+		ipDimensions, ipExists := d.IPDimensionsMap[key]
+		portDimension, portExists := d.PortDimensionsMap[key]
+
+		if !ipExists || !portExists {
 			d.debug(fmt.Sprintf("  sourceID %x and key %v does not exist in DimensionsPerSourceIDMap", sample.SampleCounterData.SourceID, key))
 			continue
 		}
-		if err := d.DimensionsPerSourceIDMap[key].Validate(); err != nil {
-			d.debug(fmt.Sprintf("  error in DimensionsPerSourceIDMap.Validate, error is %s, map value is %v whereas counter source ID is %x and key is %v", err, d.DimensionsPerSourceIDMap[key], sample.SampleCounterData.SourceID, key))
+
+		if ipDimensions == nil || len(ipDimensions) == 0 || portDimension == nil {
+			d.debug(fmt.Sprintf("  error in DimensionsPerSourceIDMap.Validate,  counter source ID is %x and key is %v", sample.SampleCounterData.SourceID, key))
 			continue
 		}
 
@@ -43,8 +47,7 @@ func makeMetricsForCounters(p *V5Format, d *PacketDecoder) ([]telegraf.Metric, e
 
 			counterFields := counterRecord.CounterData.GetFields()
 
-			dimensions := d.DimensionsPerSourceIDMap[key]
-			counterTags := counterRecord.CounterData.GetTags(dimensions)
+			counterTags := counterRecord.CounterData.GetTags(ipDimensions, portDimension)
 
 			err := appendCommonTags(p, counterTags)
 			if err != nil {

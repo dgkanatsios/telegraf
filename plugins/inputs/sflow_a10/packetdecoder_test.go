@@ -301,12 +301,12 @@ func TestDecodeA10EndToEnd(t *testing.T) {
 	require.NoError(t, err)
 
 	// make sure port information has been added into the map for the correct sourceID
-	require.Equal(t, "DST", dc.DimensionsPerSourceIDMap[key].PortDimensions.TableType)
-	require.Equal(t, "TCP", dc.DimensionsPerSourceIDMap[key].PortDimensions.PortType)
-	require.Equal(t, 15478, dc.DimensionsPerSourceIDMap[key].PortDimensions.PortNumber)
-	require.Equal(t, 16123, dc.DimensionsPerSourceIDMap[key].PortDimensions.PortRangeEnd)
-	require.Equal(t, 16123, dc.DimensionsPerSourceIDMap[key].PortDimensions.PortRangeEnd)
-	require.Equal(t, 0, len(dc.DimensionsPerSourceIDMap[key].IPDimensions))
+	require.Equal(t, "DST", dc.PortDimensionsMap[key].TableType)
+	require.Equal(t, "TCP", dc.PortDimensionsMap[key].PortType)
+	require.Equal(t, 15478, dc.PortDimensionsMap[key].PortNumber)
+	require.Equal(t, 16123, dc.PortDimensionsMap[key].PortRangeEnd)
+	require.Equal(t, 16123, dc.PortDimensionsMap[key].PortRangeEnd)
+	require.Equal(t, 0, len(dc.IPDimensionsMap[key]))
 
 	// let's proceed in reading a 271 sample (contains IP information)
 	octets = bytes.NewBuffer([]byte{
@@ -346,16 +346,16 @@ func TestDecodeA10EndToEnd(t *testing.T) {
 		},
 	}
 
-	require.Equal(t, 2, len(dc.DimensionsPerSourceIDMap[key].IPDimensions))
+	require.Equal(t, 2, len(dc.IPDimensionsMap[key]))
 	for i := 0; i < 2; i++ {
-		require.Equal(t, expectedIPAddresses[0], dc.DimensionsPerSourceIDMap[key].IPDimensions[0])
+		require.Equal(t, expectedIPAddresses[0], dc.IPDimensionsMap[key][0])
 	}
 	// also make sure port information is still there
-	require.Equal(t, "DST", dc.DimensionsPerSourceIDMap[key].PortDimensions.TableType)
-	require.Equal(t, "TCP", dc.DimensionsPerSourceIDMap[key].PortDimensions.PortType)
-	require.Equal(t, 15478, dc.DimensionsPerSourceIDMap[key].PortDimensions.PortNumber)
-	require.Equal(t, 16123, dc.DimensionsPerSourceIDMap[key].PortDimensions.PortRangeEnd)
-	require.Equal(t, 16123, dc.DimensionsPerSourceIDMap[key].PortDimensions.PortRangeEnd)
+	require.Equal(t, "DST", dc.PortDimensionsMap[key].TableType)
+	require.Equal(t, "TCP", dc.PortDimensionsMap[key].PortType)
+	require.Equal(t, 15478, dc.PortDimensionsMap[key].PortNumber)
+	require.Equal(t, 16123, dc.PortDimensionsMap[key].PortRangeEnd)
+	require.Equal(t, 16123, dc.PortDimensionsMap[key].PortRangeEnd)
 
 	// now let's read one 217 which contains the actual metrics
 	octets = bytes.NewBuffer([]byte{

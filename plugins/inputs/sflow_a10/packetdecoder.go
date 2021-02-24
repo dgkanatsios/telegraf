@@ -18,13 +18,15 @@ type PacketDecoder struct {
 	// DimensionsPerSourceIDMap is a map that contains port/ip information for every sourceID
 	// port/ip information is obtained by counter records tagged with 260 and 271/272 respectively
 	// using pointer here because https://stackoverflow.com/questions/32751537/why-do-i-get-a-cannot-assign-error-when-setting-value-to-a-struct-as-a-value-i
-	DimensionsPerSourceIDMap map[string]*DimensionsPerSourceID
+	IPDimensionsMap   map[string][]IPDimension
+	PortDimensionsMap map[string]*PortDimension
 }
 
 func NewDecoder() *PacketDecoder {
 	return &PacketDecoder{
-		DimensionsPerSourceIDMap: make(map[string]*DimensionsPerSourceID),
-		CounterBlocks:            make(map[uint32]CounterBlock),
+		IPDimensionsMap:   make(map[string][]IPDimension),
+		PortDimensionsMap: make(map[string]*PortDimension),
+		CounterBlocks:     make(map[uint32]CounterBlock),
 	}
 }
 
@@ -189,36 +191,30 @@ func (d *PacketDecoder) decodeCounterRecords(r io.Reader, sourceID uint32, agent
 			if err != nil {
 				return recs, err
 			}
-			if _, exists := d.DimensionsPerSourceIDMap[key]; !exists {
-				d.DimensionsPerSourceIDMap[key] = &DimensionsPerSourceID{}
-			}
-			d.debug(fmt.Sprintf("  got 260 - before assigning portdimensions for sourceID %x and agentAddress %v, now it's %v", sourceID, agentAddress, d.DimensionsPerSourceIDMap[key]))
-			d.DimensionsPerSourceIDMap[key].PortDimensions = portDimensions
-			d.debug(fmt.Sprintf("  got 260 - assigning portdimensions for sourceID %x and agentAddress %v, now it's %v", sourceID, agentAddress, d.DimensionsPerSourceIDMap[key]))
+
+			d.debug(fmt.Sprintf("  got 260 - before assigning portdimensions for sourceID %x and agentAddress %v, now it's %v", sourceID, agentAddress, d.PortDimensionsMap[key]))
+			d.PortDimensionsMap[key] = portDimensions
+			d.debug(fmt.Sprintf("  got 260 - assigning portdimensions for sourceID %x and agentAddress %v, now it's %v", sourceID, agentAddress, d.PortDimensionsMap[key]))
 			continue
 		} else if uint32(tag) == 271 { // hex 10F - contains IPv4 information
 			ipDimensions, err := d.decode271(r)
 			if err != nil {
 				return recs, err
 			}
-			if _, exists := d.DimensionsPerSourceIDMap[key]; !exists {
-				d.DimensionsPerSourceIDMap[key] = &DimensionsPerSourceID{}
-			}
-			d.debug(fmt.Sprintf("  got 271 - before assigning ipdimensions for sourceID %x and agentAddress %v, now it's %v", sourceID, agentAddress, d.DimensionsPerSourceIDMap[key]))
-			d.DimensionsPerSourceIDMap[key].IPDimensions = ipDimensions // TODO: append in a set instead of overwriting
-			d.debug(fmt.Sprintf("  got 271 - assigning ipdimensions for sourceID %x and agentAddress %v, now it's %v", sourceID, agentAddress, d.DimensionsPerSourceIDMap[key]))
+
+			d.debug(fmt.Sprintf("  got 271 - before assigning ipdimensions for sourceID %x and agentAddress %v, now it's %v", sourceID, agentAddress, d.IPDimensionsMap[key]))
+			d.IPDimensionsMap[key] = ipDimensions // TODO: append in a set instead of overwriting
+			d.debug(fmt.Sprintf("  got 271 - assigning ipdimensions for sourceID %x and agentAddress %v, now it's %v", sourceID, agentAddress, d.IPDimensionsMap[key]))
 			continue
 		} else if uint32(tag) == 272 { // hex 110 - contains IPv6 information
 			ipDimensions, err := d.decode272(r)
 			if err != nil {
 				return recs, err
 			}
-			if _, exists := d.DimensionsPerSourceIDMap[key]; !exists {
-				d.DimensionsPerSourceIDMap[key] = &DimensionsPerSourceID{}
-			}
-			d.debug(fmt.Sprintf("  got 272 - before assigning portdimensions for sourceID %x and agentAddress %v, now it's %v", sourceID, agentAddress, d.DimensionsPerSourceIDMap[key]))
-			d.DimensionsPerSourceIDMap[key].IPDimensions = ipDimensions
-			d.debug(fmt.Sprintf("  got 272 - assigning portdimensions fo2r sourceID %x and agentAddress %v, now it's %v", sourceID, agentAddress, d.DimensionsPerSourceIDMap[key]))
+
+			d.debug(fmt.Sprintf("  got 272 - before assigning portdimensions for sourceID %x and agentAddress %v, now it's %v", sourceID, agentAddress, d.IPDimensionsMap[key]))
+			d.IPDimensionsMap[key] = ipDimensions
+			d.debug(fmt.Sprintf("  got 272 - assigning portdimensions fo2r sourceID %x and agentAddress %v, now it's %v", sourceID, agentAddress, d.IPDimensionsMap[key]))
 			continue
 		}
 
